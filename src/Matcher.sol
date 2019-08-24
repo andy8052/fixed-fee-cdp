@@ -1,5 +1,7 @@
 pragma solidity ^0.5.10;
 
+import "./LenderTokenContract.sol";
+
 contract CDAI {
     function borrowRatePerBlock() public view returns (uint256);
 }
@@ -209,12 +211,12 @@ contract Matcher {
             }
         }
 
-        // ERC20 token = new ERC20(offerAddresses, offerAmounts);
+        LenderTokenContract token = new LenderTokenContract(offerAddresses, offerAmounts);
 
-        // // this should compound continuously
-        // uint fixedRateFeeOnNominal = (daiToDraw * rate / 10000) / (52 weeks / term);
+        // this should compound continuously
+        uint fixedRateFeeOnNominal = (daiToDraw * rate / 10000) / (52 weeks / term);
 
-        // dai.approve(address(token), uint(-1));
-        // token.deposit.value(msg.value)(totalOfferAmount, daiToDraw, fixedRateFeeOnNominal);
+        dai.approve(address(token), uint(-1));
+        token.deposit.value(msg.value)(totalOfferAmount, daiToDraw, fixedRateFeeOnNominal);
     }
 }
