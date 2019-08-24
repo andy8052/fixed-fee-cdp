@@ -45,9 +45,9 @@ contract Matcher {
     uint public worst; // tail of offers
     uint nextId = 1;
 
-    constructor() public {
+    constructor(address daiAddress) public {
         // rinkeby addresses
-        dai = DAI(0x5592EC0cfb4dbc12D3aB100b257153436a1f0FEa);
+        dai = DAI(daiAddress);
         cdai = CDAI(0x6D7F0754FFeb405d23C51CE938289d4835bE3b14);
         oracle = Oracle(0x332B6e69f21ACdBA5fb3e8DaC56ff81878527E06);
     }
@@ -211,7 +211,7 @@ contract Matcher {
             }
         }
 
-        LenderTokenContract token = new LenderTokenContract(offerAddresses, offerAmounts);
+        LenderTokenContract token = new LenderTokenContract(address(dai), offerAddresses, offerAmounts);
 
         // this should compound continuously
         uint fixedRateFeeOnNominal = (daiToDraw * rate / 10000) / (52 weeks / term);

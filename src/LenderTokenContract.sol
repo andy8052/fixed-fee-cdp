@@ -3,7 +3,7 @@ pragma solidity ^0.5.10;
 contract Context {
     // Empty internal constructor, to prevent people from mistakenly deploying
     // an instance of this contract, which should be used via inheritance.
-    constructor () internal {}
+    constructor () internal { }
     // solhint-disable-previous-line no-empty-blocks
 
     function _msgSender() internal view returns (address) {
@@ -454,14 +454,15 @@ contract LenderTokenContract is ERC20 {
     uint256 _borrowerDaiOwed;
 
     // Set as Dai Contract Address
-    address payable daiAddr; // Kovan
-    ERC20 daiContract = ERC20(daiAddr);
+    // address payable daiAddr; // Kovan
+    ERC20 daiContract;
 
-    FixedFeeCdp fixedFeeCdp = new FixedFeeCdp();
-    address fixedFeeCdpAddr = address(fixedFeeCdp);
+    FixedFeeCdp fixedFeeCdp;
 
-    constructor(address payable daiAddress, address[] memory providers, uint256[] memory weights) public {
-        daiAddr = daiAddress;
+    constructor(address daiAddress, address[] memory providers, uint256[] memory weights) public {
+        daiContract = ERC20(daiAddress);
+        fixedFeeCdp = new FixedFeeCdp();
+
         for (uint i = 0; i < providers.length; i++) {
             _balances[providers[i]] = weights[i];
             _totalSupply += weights[i];
@@ -473,7 +474,7 @@ contract LenderTokenContract is ERC20 {
         uint256 daiToDraw,
         uint256 borrowerDaiOwed
     ) public payable returns(bool){
-    daiContract.approve(fixedFeeCdpAddr, uint256(-1));
+    daiContract.approve(address(fixedFeeCdp), uint256(-1));
     // Borrower collateral = msg.value denominated in ETH - this goes into CDP
     // Lender collateral denominated in DAI - this insures against stability fee increases up to 200% of the current rate
     require(daiContract.transferFrom(msg.sender, address(this), lenderCollateral), 'Insufficient Lender Collateral');
