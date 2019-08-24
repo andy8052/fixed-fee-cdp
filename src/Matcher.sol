@@ -213,7 +213,7 @@ contract Matcher {
             }
         }
 
-        LenderTokenContract token = new LenderTokenContract(address(dai), offerAddresses, offerAmounts);
+        LenderTokenContract token = new LenderTokenContract(address(dai), offerAddresses, offerAmounts, msg.sender);
 
         // this should compound continuously
         uint fixedRateFeeOnNominal = (daiToDraw * rate / 10000) / (52 weeks / term);

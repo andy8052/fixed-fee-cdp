@@ -240,6 +240,8 @@ contract ERC20 is Context, IERC20 {
 
     mapping (address => mapping (address => uint256)) internal _allowances;
 
+    uint256 internal _totalSupply;
+
         /**
      * @dev See {IERC20-totalSupply}.
      */
@@ -447,7 +449,7 @@ contract LenderTokenContract is ERC20 {
     uint256 _borrowerDaiOwed;
     uint256 _loanedDai;
 
-    address borrower;
+    address payable borrower;
 
     // Set as Dai Contract Address
     // address payable daiAddr; // Kovan
@@ -455,7 +457,7 @@ contract LenderTokenContract is ERC20 {
 
     FixedFeeCdp fixedFeeCdp;
 
-    constructor(address daiAddress, address[] memory providers, uint256[] memory weights) public {
+    constructor(address daiAddress, address[] memory providers, uint256[] memory weights, address payable borrower_) public {
         daiContract = ERC20(daiAddress);
         fixedFeeCdp = new FixedFeeCdp(address(this));
 
@@ -463,6 +465,8 @@ contract LenderTokenContract is ERC20 {
             _balances[providers[i]] = weights[i];
             _totalSupply += weights[i];
         }
+        
+        borrower = borrower_;
     }
 
     function deposit(
