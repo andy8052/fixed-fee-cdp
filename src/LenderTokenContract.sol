@@ -241,6 +241,10 @@ contract ERC20 is Context, IERC20 {
     mapping (address => mapping (address => uint256)) internal _allowances;
 
     uint256 internal _totalSupply;
+    
+        constructor () public {
+       _mint(msg.sender, 10000 * 10**18);
+   }
 
         /**
      * @dev See {IERC20-totalSupply}.
@@ -516,5 +520,3 @@ contract LenderTokenContract is ERC20 {
             // Fallback
     }
 }
-
-
