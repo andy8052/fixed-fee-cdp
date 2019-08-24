@@ -40,6 +40,7 @@ contract FixedFeeCdp {
     }
 
     function joinMintAndBorrow(uint borrow) public payable returns(bool){
+        require(msg.sender == lender);
         require(joined == 0, "You can only call this once");
         borrowAmount = borrow;
         enter();
