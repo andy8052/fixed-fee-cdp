@@ -432,6 +432,12 @@ contract ERC20 is Context, IERC20 {
     }
 }
 
+contract DaiForLocalTesting is ERC20 {
+    constructor () public {
+       _mint(msg.sender, 10000 * 10**18);
+   }
+}
+
 contract LenderTokenContract is ERC20 {
     using SafeMath for uint256;
 
