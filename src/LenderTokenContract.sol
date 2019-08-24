@@ -443,7 +443,7 @@ contract DaiForLocalTesting is ERC20 {
 contract LenderTokenContract is ERC20 {
     using SafeMath for uint256;
 
-    bool _closed = false;
+    bool public _closed = false;
     uint256 _lenderCollateral;
     uint256 _lenderEth;
     uint256 _borrowerDaiOwed;

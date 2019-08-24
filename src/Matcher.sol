@@ -92,8 +92,8 @@ contract Matcher {
                 require(offers[insertBefore].rate > rate, "");
                 require(offers[offers[insertBefore].previous].rate <= rate, "");
                 offers[id] = Offer(insertBefore, offers[insertBefore].previous, rate, amount, msg.sender);
-                offers[insertBefore].previous = id;
                 offers[offers[insertBefore].previous].next = id;
+                offers[insertBefore].previous = id;
             }
         }
     }
