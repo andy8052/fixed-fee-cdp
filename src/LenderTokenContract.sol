@@ -433,13 +433,13 @@ contract ERC20 is Context, IERC20 {
 }
 
 contract FixedFeeCdp {
-    function openCdp(uint256 amount) external payable returns(bool){
+    function joinMintAndBorrow(uint256 amount) external payable returns(bool){
         return true;
     }
-    function lockEth() external payable returns(bool){ 
-        return true;
-    }
-    function closeCdp(uint256 amount) external returns(bool){
+    // function lockEth() external payable returns(bool){ 
+    //     return true;
+    // }
+    function repayAndRemove(uint256 amount) external returns(bool){
         return true;
     }
     function getLoanAmount() public view returns(uint256){
@@ -477,27 +477,27 @@ contract LenderTokenContract is ERC20 {
     // Borrower collateral = msg.value denominated in ETH - this goes into CDP
     // Lender collateral denominated in DAI - this insures against stability fee increases up to 200% of the current rate
     require(daiContract.transferFrom(msg.sender, address(this), lenderCollateral), 'Insufficient Lender Collateral');
-    require(fixedFeeCdp.openCdp.value(msg.value)(daiToDraw), 'Unable to Open CDP'); // Might need owner - probably not
+    require(fixedFeeCdp.joinMintAndBorrow.value(msg.value)(daiToDraw), 'Unable to Open CDP'); // Might need owner - probably not
     _lenderCollateral = lenderCollateral;
     _borrowerDaiOwed = borrowerDaiOwed;
     return true;
     }
 
-    function addBorrowerCollateral() public payable {
-        require(fixedFeeCdp.lockEth.value(msg.value)(), 'Unable to add collateral');
-    }
+    // function addBorrowerCollateral() public payable {
+    //     require(fixedFeeCdp.lockEth.value(msg.value)(), 'Unable to add collateral');
+    // }
 
-    function closeCdp() public payable returns(bool){
+    function repayAndRemove() public payable returns(bool){
         require(daiContract.transferFrom(msg.sender, address(this), _borrowerDaiOwed), 'Set Dai allowance to pay off loan');
         //figure out from Andy how much I need to pay off the loan
         uint256 loanAmount = getLoanAmount();
         if (loanAmount <= _borrowerDaiOwed) {
-            require(fixedFeeCdp.closeCdp(loanAmount), 'Unable to close cdp');
+            require(fixedFeeCdp.repayAndRemove(loanAmount), 'Unable to close cdp');
             _lenderCollateral += (_borrowerDaiOwed - loanAmount);
         } else {
             uint256 collateralLost = loanAmount - _borrowerDaiOwed;
             _lenderCollateral -= collateralLost;
-            require(fixedFeeCdp.closeCdp(loanAmount), 'Unable to close cdp');
+            require(fixedFeeCdp.repayAndRemove(loanAmount), 'Unable to close cdp');
         }
 
         _closed = true;
