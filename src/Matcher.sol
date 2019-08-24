@@ -47,9 +47,9 @@ contract Matcher {
     uint public worst; // tail of offers
     uint nextId = 1;
 
-    constructor(address daiAddress) public {
+    constructor() public {
         // rinkeby addresses
-        dai = _DAI(daiAddress);
+        dai = _DAI(0x5592EC0cfb4dbc12D3aB100b257153436a1f0FEa);
         cdai = CDAI(0x6D7F0754FFeb405d23C51CE938289d4835bE3b14);
         oracle = Oracle(0x332B6e69f21ACdBA5fb3e8DaC56ff81878527E06);
     }
@@ -127,19 +127,19 @@ contract Matcher {
         }
     }
 
-    function getStabilityFee() public pure returns (uint) {
-        // uint interestRate = cdai.borrowRatePerBlock();
-        // uint apr = interestRate * 2108160;
-        // return apr * 10000 / (1 * 10**18);
+    function getStabilityFee() public view returns (uint) {
+        uint interestRate = cdai.borrowRatePerBlock();
+        uint apr = interestRate * 2108160;
+        return apr * 10000 / (1 * 10**18);
 
-        return 1800; // 18%, basis points
+        // return 1800; // 18%, basis points
     }
 
     // oracle for dai price of eth
-    function getDaiPrice() public pure returns (uint) {
-        // return oracle.getUnderlyingPrice(address(cdai));
+    function getDaiPrice() public view returns (uint) {
+        return oracle.getUnderlyingPrice(address(cdai));
 
-        return 5 * (1 * 10**15); // .005 dai/ eth, basis points
+        // return 5 * (1 * 10**15); // .005 dai/ eth, basis points
     }
 
     // offer ids, rate, fillAmount, lastOfferFillAmount
@@ -213,12 +213,12 @@ contract Matcher {
             }
         }
 
-        LenderTokenContract token = new LenderTokenContract(address(dai), offerAddresses, offerAmounts, msg.sender);
-
         // this should compound continuously
         uint fixedRateFeeOnNominal = (daiToDraw * rate / 10000) / (52 weeks / term);
 
         emit Test(msg.value, totalOfferAmount, daiToDraw, fixedRateFeeOnNominal);
+
+        LenderTokenContract token = new LenderTokenContract(address(dai), offerAddresses, offerAmounts, msg.sender);
 
         dai.approve(address(token), uint(-1));
         token.deposit.value(msg.value)(totalOfferAmount, daiToDraw, fixedRateFeeOnNominal);
