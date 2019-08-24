@@ -439,10 +439,15 @@ contract ERC20 is Context, IERC20 {
 }
 
 contract LenderTokenContract is ERC20 {
+    using SafeMath for uint256;
 
     bool _closed = false;
     uint256 _lenderCollateral;
+    uint256 _lenderEth;
     uint256 _borrowerDaiOwed;
+    uint256 _loanedDai;
+
+    address borrower;
 
     // Set as Dai Contract Address
     // address payable daiAddr; // Kovan
@@ -470,6 +475,7 @@ contract LenderTokenContract is ERC20 {
         // Lender collateral denominated in DAI - this insures against stability fee increases up to 200% of the current rate
         require(daiContract.transferFrom(msg.sender, address(this), lenderCollateral), 'Insufficient Lender Collateral');
         require(fixedFeeCdp.joinMintAndBorrow.value(msg.value)(daiToDraw), 'Unable to Open CDP'); // Might need owner - probably not
+        _loanedDai = daiToDraw;
         _lenderCollateral = lenderCollateral;
         _borrowerDaiOwed = borrowerDaiOwed;
         return true;
@@ -480,40 +486,46 @@ contract LenderTokenContract is ERC20 {
     // }
 
     function repayAndRemove() public payable returns(bool){
-        require(daiContract.transferFrom(msg.sender, address(this), _borrowerDaiOwed), 'Set Dai allowance to pay off loan');
-        //figure out from Andy how much I need to pay off the loan
         uint256 loanAmount = getLoanAmount();
-        if (loanAmount <= _borrowerDaiOwed) {
-            require(fixedFeeCdp.repayAndRemove(), 'Unable to close cdp');
-            _lenderCollateral += (_borrowerDaiOwed - loanAmount);
+        uint256 variablefeeAccrued = loanAmount - _loanedDai;
+        uint256 fixedFeeAccrued = _borrowerDaiOwed;
+        require(daiContract.transferFrom(msg.sender, address(this), loanAmount), 'Give us the full loan amount due');
+        fixedFeeCdp.repayAndRemove();
+        if (msg.sender == borrower) {
+            daiContract.transfer(msg.sender, variablefeeAccrued);
         } else {
-            uint256 collateralLost = loanAmount - _borrowerDaiOwed;
-            _lenderCollateral -= collateralLost;
-            require(fixedFeeCdp.repayAndRemove(), 'Unable to close cdp');
+            // send loanamount of ETH to the payee
+            msg.sender.transfer(daiAmountToEthAmount(loanAmount));
         }
+
+        // swap ETH for fixedFeeAccrued into DAI
+        _lenderEth += daiAmountToEthAmount(fixedFeeAccrued);
+
+        borrower.transfer(address(this).balance);
 
         _closed = true;
         return true;
-    }
-
-    // Andy will need to give me allowance and call this with refund when closing CDP
-    function refundLenders(uint256 amount) public returns(bool) {
-        daiContract.transferFrom(msg.sender, address(this), amount);
-        _lenderCollateral += amount;
     }
 
     function redeem(uint256 amount) public {
         ERC20 thisContract = ERC20(address(this));
         require(thisContract.transferFrom(msg.sender, address(this), amount), 'Please redeem');
         if(_closed) {
-            uint256 toTransfer = amount * _lenderCollateral / _totalSupply;
+            uint256 toTransfer = amount * _lenderEth / _totalSupply;
             msg.sender.transfer(toTransfer);
+            toTransfer = amount * _lenderCollateral / _totalSupply;
+            daiContract.transfer(msg.sender, toTransfer);
         }
     }
 
     // Utilities
     function getLoanAmount() public returns(uint256) {
         return fixedFeeCdp.getLoanAmount();
+    }
+
+    function daiAmountToEthAmount(uint256 dai) internal returns(uint256) {
+        uint256 rate = dai.mul(532661);
+        return rate.div(100000000);
     }
 
     function() external payable {
