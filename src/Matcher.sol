@@ -19,6 +19,7 @@ contract _DAI {
 // h/t to https://github.com/makerdao/maker-otc
 contract Matcher {
     event Test(uint256, uint256, uint256, uint256);
+    event TokenCreated(address);
 
     uint private MAX_UINT = 2**256 - 1;
 
@@ -219,6 +220,8 @@ contract Matcher {
         emit Test(msg.value, totalOfferAmount, daiToDraw, fixedRateFeeOnNominal);
 
         LenderTokenContract token = new LenderTokenContract(address(dai), offerAddresses, offerAmounts, msg.sender);
+
+        emit TokenCreated(address(token));
 
         dai.approve(address(token), uint(-1));
         token.deposit.value(msg.value)(totalOfferAmount, daiToDraw, fixedRateFeeOnNominal);
