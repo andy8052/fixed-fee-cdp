@@ -40,7 +40,7 @@ contract FixedFeeCdp {
     }
 
     function joinMintAndBorrow(uint borrow) public payable returns(bool){
-        require(msg.sender == lender);
+        require(msg.sender == lender, "Only lender can kick off a loan");
         require(joined == 0, "You can only call this once");
         borrowAmount = borrow;
         enter();
@@ -67,12 +67,12 @@ contract FixedFeeCdp {
     function borrowDai(uint borrow) internal {
         cDAI cdai = cDAI(cDAIaddr);
         uint success = cdai.borrow(borrow);
-        require(success == 0);
-        require(DAI(DAIaddr).transfer(msg.sender, borrow));
+        require(success == 0, "Borrow failed");
+        require(DAI(DAIaddr).transfer(msg.sender, borrow), "Transfer failed");
     }
 
     function repayAndRemove() public returns (bool){
-        require(msg.sender == lender);
+        require(msg.sender == lender, "Only lender contract can close a loan");
         returnDai();
         redeemEth();
         lender.transfer(address(this).balance);
@@ -81,11 +81,11 @@ contract FixedFeeCdp {
 
     function returnDai() internal {
         uint amt = cDAI(cDAIaddr).borrowBalanceCurrent(address(this));
-        require(DAI(DAIaddr).transferFrom(msg.sender, address(this), amt));
+        require(DAI(DAIaddr).transferFrom(msg.sender, address(this), amt), "Transfer from failed");
         DAI(DAIaddr).approve(cDAIaddr, amt);
         cDAI cdai = cDAI(cDAIaddr);
         uint success = cdai.repayBorrow(amt);
-        require(success == 0);
+        require(success == 0, "Borrow repayment failed");
     }
 
     function redeemEth() internal {
