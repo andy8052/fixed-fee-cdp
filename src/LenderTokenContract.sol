@@ -3,7 +3,7 @@ pragma solidity ^0.5.10;
 contract Context {
     // Empty internal constructor, to prevent people from mistakenly deploying
     // an instance of this contract, which should be used via inheritance.
-    constructor () internal { }
+    constructor () internal {}
     // solhint-disable-previous-line no-empty-blocks
 
     function _msgSender() internal view returns (address) {
@@ -436,7 +436,7 @@ contract FixedFeeCdp {
     function joinMintAndBorrow(uint256 amount) external payable returns(bool){
         return true;
     }
-    // function lockEth() external payable returns(bool){ 
+    // function lockEth() external payable returns(bool){
     //     return true;
     // }
     function repayAndRemove(uint256 amount) external returns(bool){
@@ -454,14 +454,14 @@ contract LenderTokenContract is ERC20 {
     uint256 _borrowerDaiOwed;
 
     // Set as Dai Contract Address
-    address payable daiAddr = 0xC4375B7De8af5a38a93548eb8453a498222C4fF2; // Kovan
+    address payable daiAddr; // Kovan
     ERC20 daiContract = ERC20(daiAddr);
 
     FixedFeeCdp fixedFeeCdp = new FixedFeeCdp();
     address fixedFeeCdpAddr = address(fixedFeeCdp);
 
-
-    constructor(address[] memory providers, uint256[] memory weights) public {
+    constructor(address payable daiAddress, address[] memory providers, uint256[] memory weights) public {
+        daiAddr = daiAddress;
         for (uint i = 0; i < providers.length; i++) {
             _balances[providers[i]] = weights[i];
             _totalSupply += weights[i];
