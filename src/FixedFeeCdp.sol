@@ -35,12 +35,11 @@ contract FixedFeeCdp {
 
     uint joined = 0;
 
-    constructor (address payable owner_, address payable lender_) public {
-        owner = owner_;
+    constructor (address payable lender_) public {
         lender = lender_;
     }
 
-    function joinMintAndBorrow(uint borrow) public payable {
+    function joinMintAndBorrow(uint borrow) public payable returns(bool){
         require(joined == 0, "You can only call this once");
         borrowAmount = borrow;
         enter();
@@ -51,6 +50,8 @@ contract FixedFeeCdp {
 
         borrowDai(borrow);
         joined = 1;
+
+        return true;
     }
 
     function enter() internal {
@@ -69,11 +70,12 @@ contract FixedFeeCdp {
         require(DAI(DAIaddr).transfer(msg.sender, borrow));
     }
 
-    function repayAndRemove() public {
+    function repayAndRemove() public returns (bool){
         require(msg.sender == lender);
         returnDai();
         redeemEth();
         lender.transfer(address(this).balance);
+        return true;
     }
 
     function returnDai() internal {
@@ -88,6 +90,10 @@ contract FixedFeeCdp {
     function redeemEth() internal {
         lendAmount = cETH(cETHaddr).balanceOfUnderlying(address(this));
         cETH(cETHaddr).redeemUnderlying(lendAmount);
+    }
+
+    function getLoanAmount() public returns (uint) {
+        return cDAI(cDAIaddr).borrowBalanceCurrent(address(this));
     }
 
     function() external payable { }

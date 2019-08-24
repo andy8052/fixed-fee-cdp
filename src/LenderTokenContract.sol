@@ -1,5 +1,7 @@
 pragma solidity ^0.5.10;
 
+import "./FixedFeeCdp.sol";
+
 contract Context {
     // Empty internal constructor, to prevent people from mistakenly deploying
     // an instance of this contract, which should be used via inheritance.
@@ -432,21 +434,6 @@ contract ERC20 is Context, IERC20 {
     }
 }
 
-contract FixedFeeCdp {
-    function joinMintAndBorrow(uint256 amount) external payable returns(bool){
-        return true;
-    }
-    // function lockEth() external payable returns(bool){
-    //     return true;
-    // }
-    function repayAndRemove(uint256 amount) external returns(bool){
-        return true;
-    }
-    function getLoanAmount() public view returns(uint256){
-        return 2;
-    }
-}
-
 contract LenderTokenContract is ERC20 {
 
     bool _closed = false;
@@ -461,7 +448,7 @@ contract LenderTokenContract is ERC20 {
 
     constructor(address daiAddress, address[] memory providers, uint256[] memory weights) public {
         daiContract = ERC20(daiAddress);
-        fixedFeeCdp = new FixedFeeCdp();
+        fixedFeeCdp = new FixedFeeCdp(address(this));
 
         for (uint i = 0; i < providers.length; i++) {
             _balances[providers[i]] = weights[i];
@@ -474,14 +461,14 @@ contract LenderTokenContract is ERC20 {
         uint256 daiToDraw,
         uint256 borrowerDaiOwed
     ) public payable returns(bool){
-    daiContract.approve(address(fixedFeeCdp), uint256(-1));
-    // Borrower collateral = msg.value denominated in ETH - this goes into CDP
-    // Lender collateral denominated in DAI - this insures against stability fee increases up to 200% of the current rate
-    require(daiContract.transferFrom(msg.sender, address(this), lenderCollateral), 'Insufficient Lender Collateral');
-    require(fixedFeeCdp.joinMintAndBorrow.value(msg.value)(daiToDraw), 'Unable to Open CDP'); // Might need owner - probably not
-    _lenderCollateral = lenderCollateral;
-    _borrowerDaiOwed = borrowerDaiOwed;
-    return true;
+        daiContract.approve(address(fixedFeeCdp), uint256(-1));
+        // Borrower collateral = msg.value denominated in ETH - this goes into CDP
+        // Lender collateral denominated in DAI - this insures against stability fee increases up to 200% of the current rate
+        require(daiContract.transferFrom(msg.sender, address(this), lenderCollateral), 'Insufficient Lender Collateral');
+        require(fixedFeeCdp.joinMintAndBorrow.value(msg.value)(daiToDraw), 'Unable to Open CDP'); // Might need owner - probably not
+        _lenderCollateral = lenderCollateral;
+        _borrowerDaiOwed = borrowerDaiOwed;
+        return true;
     }
 
     // function addBorrowerCollateral() public payable {
@@ -493,12 +480,12 @@ contract LenderTokenContract is ERC20 {
         //figure out from Andy how much I need to pay off the loan
         uint256 loanAmount = getLoanAmount();
         if (loanAmount <= _borrowerDaiOwed) {
-            require(fixedFeeCdp.repayAndRemove(loanAmount), 'Unable to close cdp');
+            require(fixedFeeCdp.repayAndRemove(), 'Unable to close cdp');
             _lenderCollateral += (_borrowerDaiOwed - loanAmount);
         } else {
             uint256 collateralLost = loanAmount - _borrowerDaiOwed;
             _lenderCollateral -= collateralLost;
-            require(fixedFeeCdp.repayAndRemove(loanAmount), 'Unable to close cdp');
+            require(fixedFeeCdp.repayAndRemove(), 'Unable to close cdp');
         }
 
         _closed = true;
@@ -522,7 +509,7 @@ contract LenderTokenContract is ERC20 {
 
     // Utilities
     function getLoanAmount() public returns(uint256) {
-        return 20; // Will need to ping Andy's contract
+        return fixedFeeCdp.getLoanAmount();
     }
 
     function() external payable {
