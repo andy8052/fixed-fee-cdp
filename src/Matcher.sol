@@ -10,7 +10,7 @@ contract Oracle {
     function getUnderlyingPrice(address) public view returns (uint256);
 }
 
-contract DAI {
+contract _DAI {
     function transferFrom(address sender, address recipient, uint amount) public returns (bool);
     function transfer(address recipient, uint amount) public returns (bool);
     function approve(address spender, uint value) public returns (bool);
@@ -18,9 +18,11 @@ contract DAI {
 
 // h/t to https://github.com/makerdao/maker-otc
 contract Matcher {
+    event Test(uint256, uint256, uint256, uint256);
+
     uint private MAX_UINT = 2**256 - 1;
 
-    DAI dai;
+    _DAI dai;
     CDAI cdai;
     Oracle oracle;
 
@@ -47,7 +49,7 @@ contract Matcher {
 
     constructor(address daiAddress) public {
         // rinkeby addresses
-        dai = DAI(daiAddress);
+        dai = _DAI(daiAddress);
         cdai = CDAI(0x6D7F0754FFeb405d23C51CE938289d4835bE3b14);
         oracle = Oracle(0x332B6e69f21ACdBA5fb3e8DaC56ff81878527E06);
     }
@@ -187,7 +189,7 @@ contract Matcher {
 
         (offerIds, rate, totalOfferAmount, lastOfferAmount) = matchOffers(daiToDraw);
 
-        uint minimumEth = (daiToDraw * getDaiPrice()) * collateralizationRatio / 10000;
+        uint minimumEth = (daiToDraw * getDaiPrice() / (1*10**18)) * collateralizationRatio / 10000;
 
         // enforce that the cdp will be collateralized
         require(msg.value >= minimumEth, "");
@@ -215,6 +217,8 @@ contract Matcher {
 
         // this should compound continuously
         uint fixedRateFeeOnNominal = (daiToDraw * rate / 10000) / (52 weeks / term);
+
+        emit Test(msg.value, totalOfferAmount, daiToDraw, fixedRateFeeOnNominal);
 
         dai.approve(address(token), uint(-1));
         token.deposit.value(msg.value)(totalOfferAmount, daiToDraw, fixedRateFeeOnNominal);
