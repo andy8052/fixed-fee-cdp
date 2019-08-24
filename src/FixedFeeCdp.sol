@@ -22,8 +22,8 @@ contract DAI {
     function approve(address, uint) external returns (bool);
 }
 
-contract Compound {
-    
+contract FixedFeeCdp {
+
     address troll = 0x2EAa9D77AE4D8f9cdD9FAAcd44016E746485bddb;
     address cETHaddr = 0xd6801a1DfFCd0a410336Ef88DeF4320D6DF1883e;
     address cDAIaddr = 0x6D7F0754FFeb405d23C51CE938289d4835bE3b14;
@@ -34,7 +34,7 @@ contract Compound {
     uint public lendAmount;
 
     uint joined = 0;
-    
+
     constructor (address payable owner_, address payable lender_) public {
         owner = owner_;
         lender = lender_;
