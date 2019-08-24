@@ -6,16 +6,19 @@ contract Troller {
 
 contract cETH {
     function mint() external payable;
+    function balanceOfUnderlying(address account) external returns (uint);
     function redeemUnderlying(uint redeemNum) external returns (uint);
 }
 
 contract cDAI {
     function borrow(uint borrowAmount) external returns (uint);
     function repayBorrow(uint repayAmount) external returns (uint);
+    function borrowBalanceCurrent(address account) external returns (uint);
 }
 
 contract DAI {
-    function transferFrom(address, uint) external returns (bool);
+    function transfer(address, uint) external returns(bool);
+    function transferFrom(address, address, uint) external returns (bool);
     function approve(address, uint) external returns (bool);
 }
 
@@ -29,60 +32,64 @@ contract Compound {
     address payable lender;
     uint public borrowAmount;
     uint public lendAmount;
+
+    uint joined = 0;
     
     constructor (address payable owner_, address payable lender_) public {
         owner = owner_;
         lender = lender_;
     }
-    
-    function enter() public {
+
+    function joinMintAndBorrow(uint borrow) public payable {
+        require(joined == 0, "You can only call this once");
+        borrowAmount = borrow;
+        enter();
+
+        lendAmount = msg.value;
+        cETH ceth = cETH(cETHaddr);
+        ceth.mint.value(msg.value)();
+
+        borrowDai(borrow);
+        joined = 1;
+    }
+
+    function enter() internal {
         address[] memory markets = new address[](2);
         markets[0] = cDAIaddr; //DAI
         markets[1] = cETHaddr; //ETH
         Troller trolololol = Troller(troll);
-        
+
         trolololol.enterMarkets(markets);
-        
-        // cDAI cdai = cDAI(cDAIaddr);
-        // uint success = cdai.mint(borrow);
-        // require(success == 0);
     }
-    
-    function mintEth() public payable {
-        lendAmount = msg.value;
-        cETH ceth = cETH(cETHaddr);
-        ceth.mint.value(msg.value)();
-    }
-    
-    function redeemEth() public {
-        cETH(cETHaddr).redeemUnderlying(lendAmount);
-    }
-    
-    function borrowDai(uint borrow) public {
+
+    function borrowDai(uint borrow) internal {
         cDAI cdai = cDAI(cDAIaddr);
         uint success = cdai.borrow(borrow);
         require(success == 0);
+        require(DAI(DAIaddr).transfer(msg.sender, borrow));
     }
-    
-    function returnDai() public {
-        require(DAI(DAIaddr).transferFrom(msg.sender, borrowAmount));
-        DAI(DAIaddr).approve(cDAIaddr, borrowAmount);
-        cDAI cdai = cDAI(cDAIaddr);
-        uint success = cdai.repayBorrow(borrowAmount);
-        require(success == 0);
-    }
-    
-    function joinMintAndBorrow(uint borrow) public payable {
-        borrowAmount = borrow;
-        enter();
-        mintEth();
-        borrowDai(borrow);
-    }
-    
+
     function repayAndRemove() public {
+        require(msg.sender == lender);
         returnDai();
         redeemEth();
-        owner.transfer(lendAmount);
+        lender.transfer(address(this).balance);
     }
+
+    function returnDai() internal {
+        uint amt = cDAI(cDAIaddr).borrowBalanceCurrent(address(this));
+        require(DAI(DAIaddr).transferFrom(msg.sender, address(this), amt));
+        DAI(DAIaddr).approve(cDAIaddr, amt);
+        cDAI cdai = cDAI(cDAIaddr);
+        uint success = cdai.repayBorrow(amt);
+        require(success == 0);
+    }
+
+    function redeemEth() internal {
+        lendAmount = cETH(cETHaddr).balanceOfUnderlying(address(this));
+        cETH(cETHaddr).redeemUnderlying(lendAmount);
+    }
+
+    function() external payable { }
 
 }
