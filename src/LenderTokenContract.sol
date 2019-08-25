@@ -505,7 +505,7 @@ contract LenderTokenContract is ERC20 {
         // swap ETH for fixedFeeAccrued into DAI
         _lenderEth += daiAmountToEthAmount(fixedFeeAccrued);
 
-        borrower.transfer(address(this).balance);
+        borrower.transfer(address(this).balance - _lenderEth);
 
         _closed = true;
         return true;
