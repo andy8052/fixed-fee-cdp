@@ -3,7 +3,7 @@ This smart contract repo consists of 3 contracts which allow for users to be bot
 
 ### `Matcher.sol`
 rinkeby address: 
-[0xcb79c8d1ad5081a0659c2c3e9f4f90f8c830d04c](https://rinkeby.etherscan.io/address/0xcb79c8d1ad5081a0659c2c3e9f4f90f8c830d04c)
+[0xfa6df5f5ab2C3c58dA6e872876e2766341EF4F9D](https://rinkeby.etherscan.io/address/0xfa6df5f5ab2C3c58dA6e872876e2766341EF4F9D)
 
 This contract is a matcher marketplace for fixed rate loans. I syncs up a loan taker with lenders who are willing to give them a fixed loan. If the borrower wants to take out a loan that is too big for one person, lenders can be grouped together.
 
